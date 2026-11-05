@@ -1,207 +1,293 @@
-```python
-# -*- coding: utf-8 -*-
-# Лабораторная работа 10. Прямая на плоскости
-# Решение упражнений 1–8
+# ============================================================
+# Лабораторная работа №9. Исследование поведения и свойств функций
+# ============================================================
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sympy import *
+from scipy import optimize
+from scipy.misc import derivative
+
+
+def find_roots(func, a, b, n=2000):
+    """Поиск нулей функции на отрезке [a, b] методом brentq."""
+    xs = np.linspace(a, b, n)
+    roots = []
+    for i in range(len(xs) - 1):
+        try:
+            f1, f2 = func(xs[i]), func(xs[i + 1])
+            if f1 * f2 < 0:
+                roots.append(optimize.brentq(func, xs[i], xs[i + 1]))
+        except Exception:
+            pass
+    return roots
+
 
 # ============================================================
-# Упражнение 1. Параметрические уравнения прямой из примера 3
+# УПРАЖНЕНИЕ 1
+# y = (x^4 + 2x^2 + x + 2) / (x^3 + 2x^2 + x + 2)
 # ============================================================
-p1, p2 = Point(1, 0), Point(5, 3)
-L = Line(p1, p2)
-print("Упражнение 1")
-print("Общее уравнение:", L.equation())
-print("Параметрическое представление:", L.arbitrary_point())
+print("=" * 60)
+print("УПРАЖНЕНИЕ 1")
+print("=" * 60)
 
-# ============================================================
-# Упражнение 2. Расстояние от точки (-1, 1) до прямой через (1,4) и (5,3)
-# ============================================================
-print("\nУпражнение 2")
-L2 = Line(Point(1, 4), Point(5, 3))
-d = L2.distance(Point(-1, 1))
-print("Расстояние =", d)
+def f1(x):
+    return (x**4 + 2*x**2 + x + 2) / (x**3 + 2*x**2 + x + 2)
 
-# ============================================================
-# Упражнение 3. Прямая L2 через (-2, 2), параллельная L1
-# ============================================================
-print("\nУпражнение 3")
-L1 = Line(Point(0, 0), Point(2, 3))
-L2 = L1.parallel_line(Point(-2, 2))
-print("L1:", L1.equation())
-print("L2:", L2.equation())
+# Область определения
+den_roots = np.roots([1, 2, 1, 2])
+real_den = [r.real for r in den_roots if abs(r.imag) < 1e-9]
+print("Корни знаменателя (точки разрыва):", real_den if real_den else "нет действительных")
+print("Область определения: x ≠", real_den if real_den else "R")
 
-# Рисунок к упражнению 3
-x = np.linspace(-5, 5, 100)
-y1 = 1.5 * x
-y2 = 1.5 * x + 5
-plt.figure()
-plt.plot(x, y1, label='L1: y = 1.5x')
-plt.plot(x, y2, label='L2: y = 1.5x + 5')
-plt.plot(0, 0, 'ko'); plt.plot(2, 3, 'ko')
-plt.plot(-2, 2, 'ro')
-plt.text(0.2, 0.2, 'A(0,0)')
-plt.text(2.2, 3.2, 'B(2,3)')
-plt.text(-2.2, 2.2, 'M(-2,2)')
-plt.axhline(0, color='gray', linewidth=0.5)
-plt.axvline(0, color='gray', linewidth=0.5)
-plt.grid(True); plt.axis('equal')
-plt.legend()
-plt.title('Упражнение 3: параллельные прямые')
+# Графики на разных промежутках
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+for ax, (a, b) in zip(axes, [(-10, -2), (-2, 2), (2, 10)]):
+    x = np.linspace(a, b, 1000)
+    y = f1(x)
+    y = np.where(np.abs(y) < 50, y, np.nan)
+    ax.plot(x, y)
+    ax.grid(True)
+    ax.set_title(f"x ∈ [{a}, {b}]")
+plt.tight_layout()
 plt.show()
 
-# ============================================================
-# Упражнение 4. Прямая L3 через (-2, 2), перпендикулярная L1
-# ============================================================
-print("\nУпражнение 4")
-L3 = L1.perpendicular_line(Point(-2, 2))
-print("L3:", L3.equation())
+# Нули функции
+roots1 = find_roots(f1, -10, 10)
+print("Нули функции:", [f"{r:.6f}" for r in roots1])
 
-x = np.linspace(-5, 5, 100)
-y1 = 1.5 * x
-y3 = -2/3 * x + 2/3
-plt.figure()
-plt.plot(x, y1, label='L1: y = 1.5x')
-plt.plot(x, y3, label='L3: y = -2/3 x + 2/3')
-plt.plot(-2, 2, 'ro')
-plt.text(-1.8, 2.2, 'M(-2,2)')
-plt.axhline(0, color='gray', linewidth=0.5)
-plt.axvline(0, color='gray', linewidth=0.5)
-plt.grid(True); plt.axis('equal')
+# Производные
+def df1(x):
+    return derivative(f1, x, dx=1e-6)
+def d2f1(x):
+    return derivative(df1, x, dx=1e-6)
+
+stat1 = find_roots(df1, -10, 10)
+print("Стационарные точки:")
+for s in stat1:
+    print(f"  x={s:.4f}, f={f1(s):.4f}, f''={d2f1(s):.4f}")
+
+infl1 = find_roots(d2f1, -10, 10)
+print("Точки перегиба:")
+for p in infl1:
+    print(f"  x={p:.4f}, f={f1(p):.4f}")
+
+print("Наклонная асимптота: y = x (при x → ±∞)")
+print()
+
+
+# ============================================================
+# УПРАЖНЕНИЕ 2
+# Распределение Максвелла
+# ============================================================
+print("=" * 60)
+print("УПРАЖНЕНИЕ 2")
+print("=" * 60)
+
+def maxwell(x, beta=1.0):
+    return np.where(x > 0, np.sqrt(2 / np.pi) * beta**1.5 * x**2 * np.exp(-beta * x**2 / 2), 0.0)
+
+# а) β = 1
+x = np.linspace(0, 6, 1000)
+plt.figure(figsize=(8, 5))
+plt.plot(x, maxwell(x), label="f(x), β=1")
+
+res = optimize.fmin(lambda t: -maxwell(t), 1.0, full_output=True, disp=False)
+x_max = res[0][0]
+print(f"Нуль функции: x = 0")
+print(f"Точка максимума: x = {x_max:.4f}, f = {maxwell(x_max):.4f}")
+plt.plot(x_max, maxwell(x_max), 'ro', label=f"max ({x_max:.3f}, {maxwell(x_max):.3f})")
+
+def d2maxwell(x):
+    return derivative(lambda t: maxwell(t), x, dx=1e-6, n=2)
+
+infl2 = find_roots(d2maxwell, 0.1, 6)
+print("Точки перегиба:")
+for p in infl2:
+    print(f"  x={p:.4f}, f={maxwell(p):.4f}")
+    plt.plot(p, maxwell(p), 'go', label=f"перегиб x={p:.3f}")
+
+plt.axhline(0, color='k', linewidth=0.8)
 plt.legend()
-plt.title('Упражнение 4: перпендикулярные прямые')
+plt.grid(True)
+plt.title("Распределение Максвелла, β=1")
+plt.show()
+print("Горизонтальная асимптота: y = 0 при x → +∞")
+
+# б) Влияние β
+plt.figure(figsize=(8, 5))
+for beta in [0.5, 1.0, 2.0, 4.0]:
+    plt.plot(x, maxwell(x, beta), label=f"β={beta}")
+plt.grid(True)
+plt.legend()
+plt.title("Влияние параметра β")
+plt.show()
+print("С ростом β максимум смещается влево и растёт, график становится уже.")
+print()
+
+
+# ============================================================
+# УПРАЖНЕНИЕ 3
+# y = sqrt((x^3 - 2x^2)/(x - 3))
+# ============================================================
+print("=" * 60)
+print("УПРАЖНЕНИЕ 3")
+print("=" * 60)
+
+def f3(x):
+    val = (x**3 - 2*x**2) / (x - 3)
+    return np.where(val >= 0, np.sqrt(np.maximum(val, 0)), np.nan)
+
+print("Область определения: x ≤ 2 или x > 3 (x ≠ 3)")
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+for ax, (a, b) in zip(axes, [(-3, 2.5), (3.1, 8)]):
+    x = np.linspace(a, b, 1000)
+    ax.plot(x, f3(x))
+    ax.grid(True)
+    ax.set_title(f"x ∈ [{a}, {b}]")
+plt.tight_layout()
 plt.show()
 
-# ============================================================
-# Упражнение 5. Проекция точки (0.5, 0) на прямую x - y = 0
-# ============================================================
-print("\nУпражнение 5")
-Lx = Line(Point(0, 0), Point(1, 1))  # x - y = 0
-proj = Lx.projection(Point(0.5, 0))
-print("Проекция:", proj)
+print("Нули функции: x = 0, x = 2")
+
+def g3(x):
+    v = (x**3 - 2*x**2) / (x - 3)
+    return np.sqrt(v) if v >= 0 else np.nan
+
+stat3 = find_roots(lambda t: derivative(g3, t, dx=1e-6), 3.1, 8)
+print("Стационарные точки:")
+for s in stat3:
+    print(f"  x={s:.4f}, y={g3(s):.4f}")
+
+print("Вертикальная асимптота: x = 3")
+print("Наклонная асимптота при x → +∞: y ≈ x + 0.5")
+print()
+
 
 # ============================================================
-# Упражнение 6. Точка пересечения L1 и L3
+# УПРАЖНЕНИЕ 4
+# f(x) = e^(-x) sin(3πx) на [0; 2]
 # ============================================================
-print("\nУпражнение 6")
-inter = L1.intersection(L3)
-print("Точка пересечения:", inter)
+print("=" * 60)
+print("УПРАЖНЕНИЕ 4")
+print("=" * 60)
 
-x = np.linspace(-5, 5, 100)
-y1 = 1.5 * x
-y3 = -2/3 * x + 2/3
-plt.figure()
-plt.plot(x, y1, label='L1')
-plt.plot(x, y3, label='L3')
-for p in inter:
-    plt.plot(float(p.x), float(p.y), 'ro')
-    plt.text(float(p.x)+0.2, float(p.y)+0.2, f'({float(p.x):.2f}, {float(p.y):.2f})')
-plt.axhline(0, color='gray', linewidth=0.5)
-plt.axvline(0, color='gray', linewidth=0.5)
-plt.grid(True); plt.axis('equal')
+def f4(x):
+    return np.exp(-x) * np.sin(3 * np.pi * x)
+
+x = np.linspace(0, 2, 2000)
+plt.figure(figsize=(10, 5))
+plt.plot(x, f4(x), label="f(x) = e^(-x)·sin(3πx)")
+plt.grid(True)
+
+extrema = []
+for k in range(-1, 7):
+    xk = (np.arctan(3 * np.pi) + np.pi * k) / (3 * np.pi)
+    if 0 <= xk <= 2:
+        extrema.append(xk)
+
+maxima, minima = [], []
+for e in extrema:
+    if f4(e) > f4(e - 0.01) and f4(e) > f4(e + 0.01):
+        maxima.append(e)
+    elif f4(e) < f4(e - 0.01) and f4(e) < f4(e + 0.01):
+        minima.append(e)
+
+print("Локальные максимумы:")
+for m in maxima:
+    print(f"  x = {m:.4f}, f = {f4(m):.4f}")
+    plt.plot(m, f4(m), 'ro')
+
+print("Локальные минимумы:")
+for m in minima:
+    print(f"  x = {m:.4f}, f = {f4(m):.4f}")
+    plt.plot(m, f4(m), 'go')
+
 plt.legend()
-plt.title('Упражнение 6: пересечение L1 и L3')
+plt.title("Экстремумы f(x) = e^(-x)·sin(3πx)")
+plt.show()
+print()
+
+
+# ============================================================
+# УПРАЖНЕНИЕ 5
+# f(x) = sin x - x^2 cos x на [-10; 10]
+# ============================================================
+print("=" * 60)
+print("УПРАЖНЕНИЕ 5")
+print("=" * 60)
+
+def f5(x):
+    return np.sin(x) - x**2 * np.cos(x)
+
+def d2f5(x):
+    return derivative(f5, x, dx=1e-6, n=2)
+
+infl5 = find_roots(d2f5, -10, 10)
+print("Точки перегиба на [-10, 10]:")
+for p in infl5:
+    print(f"  x = {p:.6f}, f(x) = {f5(p):.6f}")
+
+x = np.linspace(-10, 10, 2000)
+plt.figure(figsize=(12, 5))
+plt.plot(x, f5(x), label="f(x) = sin x − x²cos x")
+for p in infl5:
+    plt.plot(p, f5(p), 'ro', markersize=5)
+plt.grid(True)
+plt.legend()
+plt.title("Точки перегиба")
+plt.show()
+print()
+
+
+# ============================================================
+# УПРАЖНЕНИЕ 6
+# f(x) = e^(1/(x^2-1))
+# ============================================================
+print("=" * 60)
+print("УПРАЖНЕНИЕ 6")
+print("=" * 60)
+
+def f6(x):
+    with np.errstate(divide='ignore', over='ignore'):
+        return np.exp(1 / (x**2 - 1))
+
+print("Нулей нет (функция всюду положительна)")
+print("Точки разрыва: x = -1, x = 1")
+for x0 in [-1, 1]:
+    print(f"  f({x0}⁻) = {f6(x0 - 1e-6)}")
+    print(f"  f({x0}⁺) = {f6(x0 + 1e-6)}")
+print("Пределы при x → ±∞: f(x) → 1")
+
+def df6(x):
+    return derivative(f6, x, dx=1e-7)
+def d2f6(x):
+    return derivative(f6, x, dx=1e-5, n=2)
+
+stat6 = find_roots(df6, -5, 5)
+print("Стационарные точки:")
+for s in stat6:
+    print(f"  x={s:.6f}, f={f6(s):.6f}, f''={d2f6(s):.4f}")
+
+infl6 = find_roots(d2f6, -5, 5)
+print("Точки перегиба:")
+for p in infl6:
+    print(f"  x={p:.6f}, f={f6(p):.6f}, tg угла наклона = {df6(p):.6f}")
+
+print("Асимптоты:")
+print("  Вертикальные: x = -1, x = 1")
+print("  Горизонтальная: y = 1")
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+for ax, (a, b) in zip(axes, [(-4, -1.05), (-0.95, 0.95), (1.05, 4)]):
+    x = np.linspace(a, b, 1000)
+    y = np.clip(f6(x), 0, 50)
+    ax.plot(x, y)
+    ax.grid(True)
+    ax.set_title(f"x ∈ [{a:.2f}, {b:.2f}]")
+plt.tight_layout()
 plt.show()
 
-# ============================================================
-# Упражнение 7. Прямая через M0(0.6, -0.4) параллельно q(-3, 3)
-# ============================================================
-print("\nУпражнение 7")
-M0 = Point(0.6, -0.4)
-q = np.array([-3, 3])
-# направляющий вектор q => нормаль n = (3, 3) (перпендикуляр)
-# уравнение: 3(x-0.6) + 3(y+0.4) = 0 => 3x + 3y - 0.6 = 0 => x + y - 0.2 = 0
-x = np.linspace(-5, 5, 100)
-y = -x + 0.2
-plt.figure()
-plt.plot(x, y, label='Прямая: x + y - 0.2 = 0')
-plt.plot(0.6, -0.4, 'ro')
-plt.text(0.8, -0.2, 'M0(0.6, -0.4)')
-plt.arrow(0, -2, q[0], q[1], width=0.08, color='green', length_includes_head=True)
-plt.text(-2.5, -0.5, 'q(-3, 3)')
-plt.axhline(0, color='gray', linewidth=0.5)
-plt.axvline(0, color='gray', linewidth=0.5)
-plt.grid(True); plt.axis('equal')
-plt.legend()
-plt.title('Упражнение 7')
-plt.show()
-
-# ============================================================
-# Упражнение 8. Треугольник A(2,-2), B(3,5), C(6,1)
-# ============================================================
-print("\nУпражнение 8")
-A = Point(2, -2)
-B = Point(3, 5)
-C = Point(6, 1)
-
-# 1) Высота из B: прямая через B, перпендикулярная AC
-AC = Line(A, C)
-hB = AC.perpendicular_line(B)
-print("1) Уравнение высоты из B:", hB.equation())
-
-# 2) Длина высоты из B = расстояние от B до AC
-hB_len = AC.distance(B)
-print("2) Длина высоты из B:", hB_len)
-
-# 3) Медиана из A: прямая через A и середину BC
-Mbc = Point((B.x + C.x)/2, (B.y + C.y)/2)
-medA = Line(A, Mbc)
-print("3) Уравнение медианы из A:", medA.equation())
-
-# 4) Длина медианы из A
-medA_len = A.distance(Mbc)
-print("4) Длина медианы из A:", medA_len)
-
-# 5) Биссектриса угла C
-# Направляющие векторы сторон CA и CB
-vCA = np.array([float(A.x - C.x), float(A.y - C.y)])
-vCB = np.array([float(B.x - C.x), float(B.y - C.y)])
-uCA = vCA / np.linalg.norm(vCA)
-uCB = vCB / np.linalg.norm(vCB)
-bis_dir = uCA + uCB  # направление биссектрисы
-# Прямая через C с направляющим bis_dir
-# Нормаль: (-bis_dir[1], bis_dir[0])
-n_bis = np.array([-bis_dir[1], bis_dir[0]])
-# Уравнение: n_bis·(X - C) = 0
-xx, yy = symbols('x y')
-eq_bis = n_bis[0]*(xx - float(C.x)) + n_bis[1]*(yy - float(C.y))
-eq_bis_simpl = simplify(eq_bis)
-print("5) Уравнение биссектрисы угла C:", Eq(eq_bis_simpl, 0))
-
-# Рисунок треугольника
-plt.figure()
-# Стороны
-plt.plot([A.x, B.x, C.x, A.x], [A.y, B.y, C.y, A.y], 'k-', linewidth=1.5)
-plt.plot(A.x, A.y, 'ko'); plt.text(float(A.x)+0.2, float(A.y)-0.5, 'A(2,-2)')
-plt.plot(B.x, B.y, 'ko'); plt.text(float(B.x)+0.2, float(B.y)+0.2, 'B(3,5)')
-plt.plot(C.x, C.y, 'ko'); plt.text(float(C.x)+0.2, float(C.y)+0.2, 'C(6,1)')
-
-# Высота из B
-x_h = np.linspace(-1, 8, 100)
-# AC: через (2,-2) и (6,1): направление (4,3), нормаль (3,-4)
-# 3(x-2) - 4(y+2) = 0 => 3x - 4y - 14 = 0 => y = (3x-14)/4
-# высота из B: направление (4,3) => y - 5 = (3/4)(x - 3)
-y_h = 5 + 0.75*(x_h - 3)
-plt.plot(x_h, y_h, 'r--', label='Высота из B')
-
-# Медиана из A
-x_m = np.linspace(-1, 8, 100)
-# Mbc = (4.5, 3), A=(2,-2): направление (2.5, 5) => y+2 = 2(x-2) => y = 2x - 6
-y_m = 2*x_m - 6
-plt.plot(x_m, y_m, 'g--', label='Медиана из A')
-
-# Биссектриса из C
-t = np.linspace(-2, 2, 100)
-x_b = float(C.x) + bis_dir[0]*t
-y_b = float(C.y) + bis_dir[1]*t
-plt.plot(x_b, y_b, 'b--', label='Биссектриса из C')
-
-plt.axhline(0, color='gray', linewidth=0.5)
-plt.axvline(0, color='gray', linewidth=0.5)
-plt.grid(True); plt.axis('equal')
-plt.legend()
-plt.title('Упражнение 8: треугольник и его элементы')
-plt.show()
-```
+print("=" * 60)
+print("РАБОТА ЗАВЕРШЕНА")
+print("=" * 60)
