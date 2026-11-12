@@ -1,337 +1,254 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import optimize
+import math
+from sympy import *
+from matplotlib import cm
+%matplotlib widget
 
-# Настройка графиков, чтобы сетка была и всё читалось
-plt.rcParams['figure.figsize'] = (10, 6)
-plt.rcParams['axes.grid'] = True
-
-# ============================================================
-# Упражнение 1
-# y = (x^4 + 2x^2 + x + 2) / (x^3 + 2x^2 + x + 2)
-# ============================================================
 print("=" * 60)
 print("Упражнение 1")
 print("=" * 60)
 
-def f1(x):
-    return (x**4 + 2*x**2 + x + 2) / (x**3 + 2*x**2 + x + 2)
+p1 = Point3D(1, 1, 2)
+p2 = Point3D(2, 4, 7)
+p3 = Point3D(3, 5, 1)
 
-# Ищем точки разрыва: знаменатель = 0
-def denom1(x):
-    return x**3 + 2*x**2 + x + 2
+plane1 = Plane(p1, p2, p3)
+print("Уравнение плоскости через три точки:")
+print(plane1.equation())
 
-# Найдём корни знаменателя численно
-# Видно, что x = -2 является корнем: -8 + 8 - 2 + 2 = 0
-# Проверим
-print("denom1(-2) =", denom1(-2))
+v1 = p2 - p1
+v2 = p3 - p1
+n = v1.cross(v2)
+print("\nНормальный вектор (из векторного произведения):", n)
 
-# Область определения: все x, кроме -2 (проверим другие корни)
-# Разделим многочлен: x^3 + 2x^2 + x + 2 = (x+2)(x^2+1)
-# x^2 + 1 = 0 не имеет действительных корней
-# Значит, единственная точка разрыва x = -2
+plane1_check = Plane(p1, normal_vector=n)
+print("Проверка через точку и нормальный вектор:")
+print(plane1_check.equation())
 
-# Нули функции
-def f1_num(x):
-    return x**4 + 2*x**2 + x + 2
-
-# Попробуем найти нули на разных промежутках
-# f1_num(-2) = 16 + 8 - 2 + 2 = 24 > 0
-# f1_num(0) = 2 > 0
-# f1_num(-1) = 1 + 2 - 1 + 2 = 4 > 0
-# Похоже, корней нет (все положительные), проверим минимум числителя
-# Производная числителя: 4x^3 + 4x + 1
-# Найдём минимум числителя
-try:
-    min_num = optimize.fmin(lambda x: f1_num(x), 0, disp=False)
-    print("Минимум числителя в точке x =", min_num[0], ", значение =", f1_num(min_num[0]))
-except:
-    pass
-
-# Строим график на разных промежутках
-x1 = np.linspace(-10, -2.1, 500)
-x2 = np.linspace(-1.9, 10, 500)
-
-plt.figure()
-plt.plot(x1, f1(x1), 'b', label='x < -2')
-plt.plot(x2, f1(x2), 'r', label='x > -2')
-plt.axvline(-2, color='k', linestyle='--', label='x = -2 (разрыв)')
-plt.title('Упражнение 1: y = (x^4 + 2x^2 + x + 2)/(x^3 + 2x^2 + x + 2)')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
-plt.ylim(-20, 20)
-plt.show()
-
-# Наклонная асимптота: при x -> inf, y ~ x (отношение старших степеней)
-# Проверим: f1(x)/x -> 1
-print("Предел f1(x)/x при x->inf:", np.limit if False else "~1")
-
-# Вертикальная асимптота x = -2
-# Односторонние пределы
-eps = 1e-6
-print("Предел слева при x->-2-:", f1(-2 - eps))
-print("Предел справа при x->-2+:", f1(-2 + eps))
-
-# ============================================================
-# Упражнение 2
-# Распределение Максвелла: f(x) = sqrt(2/pi) * beta^(3/2) * x^2 * exp(-beta*x^2/2)
-# ============================================================
 print("\n" + "=" * 60)
 print("Упражнение 2")
 print("=" * 60)
 
-def maxwell(x, beta=1.0):
-    # Для x <= 0 возвращаем 0
-    result = np.zeros_like(x, dtype=float)
-    mask = x > 0
-    result[mask] = np.sqrt(2/np.pi) * beta**(3/2) * x[mask]**2 * np.exp(-beta * x[mask]**2 / 2)
-    return result
+plane_base = Plane(Point3D(0, 0, 0), normal_vector=(1, 2, 3))
+print("Исходная плоскость:")
+print(plane_base.equation())
 
-# а) beta = 1
-x_vals = np.linspace(-1, 5, 1000)
-y_vals = maxwell(x_vals, beta=1.0)
+A = Point3D(4, 2, 3)
+B = Point3D(2, 0, 1)
 
-plt.figure()
-plt.plot(x_vals, y_vals, 'b')
-plt.title('Упражнение 2а: распределение Максвелла, beta = 1')
-plt.xlabel('x')
-plt.ylabel('f(x)')
-plt.xlim(-1, 5)
-plt.show()
+AB = B - A
+print("Вектор AB:", AB)
 
-# Найдём максимум (мода распределения)
-# Производная: f'(x) = C * (2x * exp(-x^2/2) - x^3 * exp(-x^2/2)) = C * x * exp(-x^2/2) * (2 - x^2)
-# Нули производной: x = 0 (не в области), x = sqrt(2)
-x_mode = np.sqrt(2)
-print("Мода (точка максимума) при beta=1: x =", x_mode)
-print("Значение в максимуме:", maxwell(np.array([x_mode]), 1.0)[0])
+n_base = Point3D(1, 2, 3)
+n_new = AB.cross(n_base)
+print("Нормальный вектор искомой плоскости:", n_new)
 
-# Точки перегиба: вторая производная
-# f''(x) = C * exp(-x^2/2) * (2 - 5x^2 + x^4)
-# Корни: x^4 - 5x^2 + 2 = 0
-# Замена t = x^2: t^2 - 5t + 2 = 0
-# t = (5 ± sqrt(25 - 8))/2 = (5 ± sqrt(17))/2
-t1 = (5 - np.sqrt(17)) / 2
-t2 = (5 + np.sqrt(17)) / 2
-x_inf1 = np.sqrt(t1)
-x_inf2 = np.sqrt(t2)
-print("Точки перегиба при beta=1: x =", x_inf1, "и x =", x_inf2)
+plane2 = Plane(A, normal_vector=n_new)
+print("Уравнение искомой плоскости:")
+print(plane2.equation())
 
-# б) Влияние beta
-plt.figure()
-for beta in [0.5, 1.0, 2.0]:
-    y_b = maxwell(x_vals, beta=beta)
-    plt.plot(x_vals, y_b, label=f'beta = {beta}')
-plt.title('Упражнение 2б: влияние параметра beta')
-plt.xlabel('x')
-plt.ylabel('f(x)')
-plt.legend()
-plt.xlim(-1, 5)
-plt.show()
+dot_product = n_base.dot(n_new)
+print("Скалярное произведение нормальных векторов:", dot_product)
+print("Плоскости перпендикулярны, если скалярное произведение = 0")
 
-print("При увеличении beta график становится уже и выше (распределение концентрируется у меньших x).")
-print("Мода = sqrt(2/beta).")
-
-# ============================================================
-# Упражнение 3
-# y = sqrt((x^3 - 2x^2)/(x - 3))
-# ============================================================
 print("\n" + "=" * 60)
 print("Упражнение 3")
 print("=" * 60)
 
-def f3(x):
-    # Подкоренное выражение должно быть >= 0, знаменатель != 0
-    inner = (x**3 - 2*x**2) / (x - 3)
-    # Защита от отрицательных значений под корнем
-    result = np.full_like(x, np.nan, dtype=float)
-    mask = inner >= 0
-    result[mask] = np.sqrt(inner[mask])
-    return result
+plane3 = Plane(Point3D(3, 0, 0), normal_vector=(1, 1, 1))
+print("Уравнение плоскости:")
+print(plane3.equation())
 
-# Область определения: (x^3 - 2x^2)/(x-3) >= 0, x != 3
-# Числитель: x^2(x - 2) >= 0 => x >= 2 или x = 0
-# Знаменатель: x - 3
-# Метод интервалов:
-# x < 0: числитель +, знаменатель - => -
-# 0 < x < 2: числитель -, знаменатель - => +
-# 2 < x < 3: числитель +, знаменатель - => -
-# x > 3: числитель +, знаменатель + => +
-# Значит, область определения: [0, 2] U (3, +inf)
-# При x = 0 подкоренное = 0, при x = 2 подкоренное = 0
+M = Point3D(1, 2, 3)
+print("Точка M:", M)
 
-x3a = np.linspace(0, 2, 500)
-x3b = np.linspace(3.01, 10, 500)
+dist = plane3.distance(M)
+print("Расстояние от точки до плоскости:", dist)
 
-plt.figure()
-plt.plot(x3a, f3(x3a), 'b', label='[0, 2]')
-plt.plot(x3b, f3(x3b), 'r', label='(3, +inf)')
-plt.axvline(3, color='k', linestyle='--', label='x = 3 (разрыв)')
-plt.title('Упражнение 3: y = sqrt((x^3 - 2x^2)/(x - 3))')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
-plt.show()
+print("Проверка по формуле:", abs(1 + 2 + 3 - 3) / math.sqrt(3))
 
-# Нули функции: x = 0 и x = 2 (подкоренное = 0)
-print("Нули функции: x = 0, x = 2")
-
-# Вертикальная асимптота x = 3
-eps = 1e-4
-print("Предел справа при x->3+:", f3(np.array([3 + eps]))[0])
-print("Предел слева при x->3-: не существует (подкоренное < 0)")
-
-# Наклонная асимптота при x -> +inf
-# y ~ sqrt(x^3/x) = sqrt(x^2) = x
-# Проверим: f3(x)/x -> 1
-print("Наклонная асимптота при x->+inf: y = x")
-
-# ============================================================
-# Упражнение 4
-# f(x) = e^(-x) * sin(3*pi*x) на [0, 2]
-# ============================================================
 print("\n" + "=" * 60)
 print("Упражнение 4")
 print("=" * 60)
 
-def f4(x):
-    return np.exp(-x) * np.sin(3 * np.pi * x)
+M4 = Point3D(1, -1, -3)
+n4 = Point3D(2, -3, 5)
 
-x4 = np.linspace(0, 2, 1000)
-plt.figure()
-plt.plot(x4, f4(x4), 'b')
-plt.title('Упражнение 4: f(x) = e^(-x) * sin(3*pi*x)')
-plt.xlabel('x')
-plt.ylabel('f(x)')
+plane4 = Plane(M4, normal_vector=n4)
+print("Уравнение плоскости:")
+eq4 = plane4.equation()
+print(eq4)
+
+O = Point3D(0, 0, 0)
+dist4 = plane4.distance(O)
+print("Расстояние от начала координат до плоскости:", dist4)
+
+A4, B4, C4, D4 = 2, -3, 5, 10
+f4 = lambda x, y: (-A4*x - B4*y - D4) / C4
+
+fig4 = plt.figure(figsize=(8, 8))
+ax4 = fig4.add_subplot(1, 1, 1, projection='3d')
+xval4 = np.linspace(-5, 5, 50)
+yval4 = np.linspace(-5, 5, 50)
+x4, y4 = np.meshgrid(xval4, yval4)
+z4 = f4(x4, y4)
+
+ax4.plot([M4.x], [M4.y], [M4.z], 'ro', label='M(1,-1,-3)')
+ax4.quiver(M4.x, M4.y, M4.z, n4.x, n4.y, n4.z, color='blue', label='n(2,-3,5)')
+ax4.text(M4.x + 0.5, M4.y + 0.5, M4.z - 0.5, 'M')
+
+surf4 = ax4.plot_surface(x4, y4, z4, rstride=5, cstride=5, cmap=cm.plasma, alpha=0.6)
+ax4.set_xlabel('X')
+ax4.set_ylabel('Y')
+ax4.set_zlabel('Z')
+ax4.set_title('Плоскость 2x - 3y + 5z + 10 = 0')
+ax4.view_init(20, -60)
 plt.show()
 
-# Найдём локальные экстремумы численно
-# Производная: f'(x) = e^(-x) * (3*pi*cos(3*pi*x) - sin(3*pi*x))
-# Нули производной: 3*pi*cos(3*pi*x) = sin(3*pi*x) => tan(3*pi*x) = 3*pi
-
-def df4(x):
-    return np.exp(-x) * (3 * np.pi * np.cos(3 * np.pi * x) - np.sin(3 * np.pi * x))
-
-# Ищем нули производной на [0, 2] с помощью brentq
-# Разобьём на интервалы, где производная меняет знак
-intervals = []
-x_test = np.linspace(0, 2, 1000)
-for i in range(len(x_test) - 1):
-    if df4(x_test[i]) * df4(x_test[i+1]) < 0:
-        intervals.append((x_test[i], x_test[i+1]))
-
-print("Найдено интервалов смены знака производной:", len(intervals))
-critical_points = []
-for a, b in intervals:
-    try:
-        root = optimize.brentq(df4, a, b)
-        critical_points.append(root)
-    except:
-        pass
-
-print("Критические точки:", critical_points)
-
-# Определим, где максимум, а где минимум
-for cp in critical_points:
-    # Вторая производная или просто сравним значения
-    val = f4(cp)
-    # Проверим соседние точки
-    left = f4(cp - 0.01)
-    right = f4(cp + 0.01)
-    if val > left and val > right:
-        print(f"  x = {cp:.4f}: локальный максимум, f = {val:.4f}")
-    elif val < left and val < right:
-        print(f"  x = {cp:.4f}: локальный минимум, f = {val:.4f}")
-
-# ============================================================
-# Упражнение 5
-# f(x) = sin(x) - x^2 * cos(x) на [-10, 10]
-# Найти точки перегиба
-# ============================================================
 print("\n" + "=" * 60)
 print("Упражнение 5")
 print("=" * 60)
 
-def f5(x):
-    return np.sin(x) - x**2 * np.cos(x)
+M5 = Point3D(2, -3, -6)
+a5 = Point3D(-3, 2, -1)
+b5 = Point3D(0, 3, 1)
+N5 = Point3D(-3, 1, 3)
 
-# Вторая производная
-# f'(x) = cos(x) - (2x*cos(x) - x^2*sin(x)) = cos(x) - 2x*cos(x) + x^2*sin(x)
-# f''(x) = -sin(x) - 2*cos(x) + 2x*sin(x) + 2x*sin(x) + x^2*cos(x)
-# = -sin(x) - 2*cos(x) + 4x*sin(x) + x^2*cos(x)
-# = sin(x)*(4x - 1) + cos(x)*(x^2 - 2)
+n5 = a5.cross(b5)
+print("Нормальный вектор (a x b):", n5)
 
-def d2f5(x):
-    return np.sin(x) * (4*x - 1) + np.cos(x) * (x**2 - 2)
+plane5 = Plane(M5, normal_vector=n5)
+print("Уравнение плоскости:")
+eq5 = plane5.equation()
+print(eq5)
 
-x5 = np.linspace(-10, 10, 2000)
-plt.figure()
-plt.plot(x5, f5(x5), 'b')
-plt.title('Упражнение 5: f(x) = sin(x) - x^2*cos(x)')
-plt.xlabel('x')
-plt.ylabel('f(x)')
+dist5 = plane5.distance(N5)
+print("Расстояние от N(-3,1,3) до плоскости:", dist5)
+
+A5, B5, C5, D5 = 5, 3, -9, -55
+f5 = lambda x, y: (-A5*x - B5*y - D5) / C5
+
+fig5 = plt.figure(figsize=(8, 8))
+ax5 = fig5.add_subplot(1, 1, 1, projection='3d')
+xval5 = np.linspace(-10, 10, 50)
+yval5 = np.linspace(-10, 10, 50)
+x5, y5 = np.meshgrid(xval5, yval5)
+z5 = f5(x5, y5)
+
+ax5.plot([M5.x], [M5.y], [M5.z], 'ro', label='M(2,-3,-6)')
+ax5.plot([N5.x], [N5.y], [N5.z], 'go', label='N(-3,1,3)')
+ax5.quiver(M5.x, M5.y, M5.z, a5.x, a5.y, a5.z, color='blue', label='a(-3,2,-1)')
+ax5.quiver(M5.x, M5.y, M5.z, b5.x, b5.y, b5.z, color='green', label='b(0,3,1)')
+ax5.quiver(M5.x, M5.y, M5.z, n5.x, n5.y, n5.z, color='red', label='n(5,3,-9)')
+
+ax5.text(M5.x + 0.5, M5.y + 0.5, M5.z - 0.5, 'M')
+ax5.text(N5.x + 0.5, N5.y + 0.5, N5.z - 0.5, 'N')
+
+surf5 = ax5.plot_surface(x5, y5, z5, rstride=5, cstride=5, cmap=cm.viridis, alpha=0.6)
+ax5.set_xlabel('X')
+ax5.set_ylabel('Y')
+ax5.set_zlabel('Z')
+ax5.set_title('Плоскость 5x + 3y - 9z - 55 = 0')
+ax5.view_init(20, -60)
 plt.show()
 
-# Ищем нули второй производной
-intervals5 = []
-for i in range(len(x5) - 1):
-    if d2f5(x5[i]) * d2f5(x5[i+1]) < 0:
-        intervals5.append((x5[i], x5[i+1]))
-
-print("Найдено интервалов смены знака второй производной:", len(intervals5))
-inflection_points = []
-for a, b in intervals5:
-    try:
-        root = optimize.brentq(d2f5, a, b)
-        inflection_points.append(root)
-    except:
-        pass
-
-print("Точки перегиба:", [f"{x:.4f}" for x in inflection_points])
-
-# ============================================================
-# Упражнение 6
-# f(x) = e^(1/(x^2 - 1))
-# ============================================================
 print("\n" + "=" * 60)
 print("Упражнение 6")
 print("=" * 60)
 
-def f6(x):
-    # Защита от деления на ноль
-    result = np.full_like(x, np.nan, dtype=float)
-    mask = np.abs(x**2 - 1) > 1e-12
-    result[mask] = np.exp(1 / (x[mask]**2 - 1))
-    return result
+M6 = Point3D(-1, 3, 0)
+N6 = Point3D(2, 4, -1)
 
-# Область определения: x != -1, x != 1
-# Точки разрыва: x = -1, x = 1
+n_base6 = Point3D(1, -2, 3)
 
-# Строим график на разных промежутках
-x6a = np.linspace(-5, -1.01, 500)
-x6b = np.linspace(-0.99, 0.99, 500)
-x6c = np.linspace(1.01, 5, 500)
+MN = N6 - M6
+print("Вектор MN:", MN)
 
-plt.figure()
-plt.plot(x6a, f6(x6a), 'b', label='x < -1')
-plt.plot(x6b, f6(x6b), 'g', label='-1 < x < 1')
-plt.plot(x6c, f6(x6c), 'r', label='x > 1')
-plt.axvline(-1, color='k', linestyle='--', label='x = -1')
-plt.axvline(1, color='k', linestyle='--', label='x = 1')
-plt.title('Упражнение 6: f(x) = e^(1/(x^2 - 1))')
-plt.xlabel('x')
-plt.ylabel('f(x)')
-plt.ylim(0, 5)
-plt.legend()
+n6 = MN.cross(n_base6)
+print("Нормальный вектор искомой плоскости:", n6)
+
+plane6 = Plane(M6, normal_vector=n6)
+print("Уравнение искомой плоскости:")
+eq6 = plane6.equation()
+print(eq6)
+
+dot6 = n_base6.dot(n6)
+print("Скалярное произведение нормальных векторов:", dot6)
+
+A6, B6, C6, D6 = 1, -4, -3, 13
+f6 = lambda x, y: (-A6*x - B6*y - D6) / C6
+
+A6b, B6b, C6b, D6b = 1, -2, 3, -10
+f6b = lambda x, y: (-A6b*x - B6b*y - D6b) / C6b
+
+fig6 = plt.figure(figsize=(10, 8))
+ax6 = fig6.add_subplot(1, 1, 1, projection='3d')
+xval6 = np.linspace(-10, 10, 50)
+yval6 = np.linspace(-10, 10, 50)
+x6, y6 = np.meshgrid(xval6, yval6)
+
+z6 = f6(x6, y6)
+z6b = f6b(x6, y6)
+
+ax6.plot([M6.x], [M6.y], [M6.z], 'ro', label='M(-1,3,0)')
+ax6.plot([N6.x], [N6.y], [N6.z], 'go', label='N(2,4,-1)')
+
+surf6 = ax6.plot_surface(x6, y6, z6, rstride=5, cstride=5, cmap=cm.plasma, alpha=0.5)
+surf6b = ax6.plot_surface(x6, y6, z6b, rstride=5, cstride=5, cmap=cm.viridis, alpha=0.5)
+
+ax6.set_xlabel('X')
+ax6.set_ylabel('Y')
+ax6.set_zlabel('Z')
+ax6.set_title('Искомая: x - 4y - 3z + 13 = 0\nИсходная: x - 2y + 3z - 10 = 0')
+ax6.view_init(20, -60)
 plt.show()
 
-# Нули функции: e^(1/(x^2-1)) > 0 всегда, нулей нет
-print("Нулей нет (функция всегда положительна)")
+print("Условие перпендикулярности: скалярное произведение нормальных векторов = 0")
+print("n1 = (1,-2,3), n2 = (1,-4,-3)")
+print("n1 * n2 = 1*1 + (-2)*(-4) + 3*(-3) = 1 + 8 - 9 = 0 — верно")
 
-# Односторонние пределы в точках разрыва
-eps = 1e-6
-print("Предел слева при x->-1-:", f6(np.array([-1 - eps]))[0])
+print("\n" + "=" * 60)
+print("Дополнительное задание")
+print("=" * 60)
+
+n1 = Point3D(2, -1, -12)
+n2 = Point3D(3, 1, -7)
+n3 = Point3D(4, -2, 0)
+
+line_dir = n1.cross(n2)
+print("Направляющий вектор линии пересечения:", line_dir)
+
+n_new = line_dir.cross(n3)
+print("Нормальный вектор искомой плоскости:", n_new)
+
+point_on_line = Point3D(1, -1, 0)
+
+plane_extra = Plane(point_on_line, normal_vector=n_new)
+print("Уравнение искомой плоскости:")
+print(plane_extra.equation())
+
+Ae, Be, Ce, De = 1, 2, 5, 1
+fe = lambda x, y: (-Ae*x - Be*y - De) / Ce
+
+fig_extra = plt.figure(figsize=(10, 8))
+ax_extra = fig_extra.add_subplot(1, 1, 1, projection='3d')
+xval_e = np.linspace(-10, 10, 50)
+yval_e = np.linspace(-10, 10, 50)
+xe, ye = np.meshgrid(xval_e, yval_e)
+ze = fe(xe, ye)
+
+ax_extra.plot([1], [-1], [0], 'ro', label='Точка на линии (1,-1,0)')
+
+surf_e = ax_extra.plot_surface(xe, ye, ze, rstride=5, cstride=5, cmap=cm.plasma, alpha=0.6)
+ax_extra.set_xlabel('X')
+ax_extra.set_ylabel('Y')
+ax_extra.set_zlabel('Z')
+ax_extra.set_title('Искомая плоскость: x + 2y + 5z + 1 = 0')
+ax_extra.view_init(20, -60)
+plt.show()
+
+print("\nВсе задания выполнены.")ел слева при x->-1-:", f6(np.array([-1 - eps]))[0])
 print("Предел справа при x->-1+:", f6(np.array([-1 + eps]))[0])
 print("Предел слева при x->1-:", f6(np.array([1 - eps]))[0])
 print("Предел справа при x->1+:", f6(np.array([1 + eps]))[0])
