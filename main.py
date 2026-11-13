@@ -8,26 +8,41 @@ def solve():
     n = int(first_line)
 
     totals = {}
-    month_data = {}
+    lines = []
 
     for _ in range(n):
-        parts = f.readline().split()
-        if not parts:
-            continue
+        line = f.readline()
+        if not line:
+            break
+        lines.append(line)
+        parts = line.split()
+        
         phone = int(parts[0])
-        month = int(parts[1][3:5])
         sec = int(parts[2])
 
         totals[phone] = totals.get(phone, 0) + sec
-        
-        if phone not in month_data:
-            month_data[phone] = {}
-        month_data[phone][month] = month_data[phone].get(month, 0) + sec
 
     best_phone = max(totals, key=totals.get)
-    best_month = max(month_data[best_phone], key=month_data[best_phone].get)
+
+    months = [0] * 13
+
+    for line in lines:
+        parts = line.split()
+        phone = int(parts[0])
+        
+        if phone == best_phone:
+            month = int(parts[1][3:5])
+            sec = int(parts[2])
+            months[month] += sec
+
+    best_month = 0
+    max_sec = -1
+    for m in range(1, 13):
+        if months[m] > max_sec:
+            max_sec = months[m]
+            best_month = m
 
     print(f"+{best_phone} {best_month}")
 
 if __name__ == "__main__":
-    solve()
+    solve() 
