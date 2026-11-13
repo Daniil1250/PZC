@@ -1,36 +1,33 @@
 import sys
 
 def solve():
-    input_data = sys.stdin.read().split()
-    if not input_data:
+    f = sys.stdin
+    first_line = f.readline()
+    if not first_line:
         return
+    n = int(first_line)
 
-    n = int(input_data[0])
-    idx = 1
-
-    stats = {}
-    total_seconds = {}
+    totals = {}
+    month_data = {}
 
     for _ in range(n):
-        phone = input_data[idx]
-        date = input_data[idx+1]
-        duration = int(input_data[idx+2])
-        idx += 3
+        parts = f.readline().split()
+        if not parts:
+            continue
+        phone = int(parts[0])
+        month = int(parts[1][3:5])
+        sec = int(parts[2])
 
-        month = int(date.split('.')[1])
-
-        total_seconds[phone] = total_seconds.get(phone, 0) + duration
-
-        if phone not in stats:
-            stats[phone] = {}
+        totals[phone] = totals.get(phone, 0) + sec
         
-        stats[phone][month] = stats[phone].get(month, 0) + duration
+        if phone not in month_data:
+            month_data[phone] = {}
+        month_data[phone][month] = month_data[phone].get(month, 0) + sec
 
-    best_phone = max(total_seconds, key=total_seconds.get)
-    phone_months = stats[best_phone]
-    best_month = max(phone_months, key=phone_months.get)
+    best_phone = max(totals, key=totals.get)
+    best_month = max(month_data[best_phone], key=month_data[best_phone].get)
 
-    print(f"{best_phone} {best_month}")
+    print(f"+{best_phone} {best_month}")
 
 if __name__ == "__main__":
     solve()
