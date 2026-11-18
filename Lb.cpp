@@ -1,63 +1,91 @@
 #include <iostream>
-#include <string>
-#include <vector>
-#include <algorithm>
+#include <cstring>
 #include <cctype>
-#include <iomanip>
 
 using namespace std;
 
-vector<int> analyzeString(const string& text) {
-    vector<int> stats(4, 0);
-    stats[0] = text.length();
+void analyzeString(const char* text, int* stats) {
+    stats[0] = strlen(text);
+    stats[1] = 0;
+    stats[2] = 0;
+    stats[3] = 0;
+
     bool inWord = false;
-    for (char c : text) {
-        if (isupper(c)) stats[2]++;
-        else if (islower(c)) stats[3]++;
-        if (isspace(c)) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (isupper(text[i])) stats[2]++;
+        else if (islower(text[i])) stats[3]++;
+
+        if (isspace(text[i])) {
             inWord = false;
         } else if (!inWord) {
             inWord = true;
             stats[1]++;
         }
     }
-    return stats;
 }
 
 void taskStrings() {
     cout << "--- Задача 1: Строки ---" << endl;
-    vector<string> lines;
-    string input;
+    const int MAX_LINES = 100;
+    const int MAX_LEN = 256;
+
+    char** lines = new char*[MAX_LINES];
+    int count = 0;
+
     cout << "Вводите строки (введите 'and' для завершения):" << endl;
-    while (true) {
-        getline(cin, input);
-        if (input == "and") break;
-        lines.push_back(input);
+    char buffer[MAX_LEN];
+    while (count < MAX_LINES) {
+        cin.getline(buffer, MAX_LEN);
+        if (strcmp(buffer, "and") == 0) break;
+        lines[count] = new char[strlen(buffer) + 1];
+        strcpy(lines[count], buffer);
+        count++;
     }
 
-    sort(lines.begin(), lines.end());
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (strcmp(lines[j], lines[j + 1]) > 0) {
+                char* temp = lines[j];
+                lines[j] = lines[j + 1];
+                lines[j + 1] = temp;
+            }
+        }
+    }
 
     cout << "\nРезультат:" << endl;
-    for (const string& line : lines) {
-        vector<int> stats = analyzeString(line);
-        cout << line << " [Длина: " << stats[0]
+    int stats[4];
+    for (int i = 0; i < count; i++) {
+        analyzeString(lines[i], stats);
+        cout << lines[i] << " [Длина: " << stats[0]
              << ", Слов: " << stats[1]
              << ", Заглавных: " << stats[2]
              << ", Строчных: " << stats[3] << "]" << endl;
+        delete[] lines[i];
     }
+    delete[] lines;
 }
 
-vector<double*> findPositiveZones(vector<vector<double>>& matrix) {
-    vector<double*> result;
-    int n = matrix.size();
-    int m = matrix[0].size();
+double** findPositiveZones(double** matrix, int n, int m, int& resultCount) {
+    resultCount = 0;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
-            bool inZone = false;
-            if (i < n / 2 && j < m / 2) inZone = true;
-            if (i >= n / 2 && j >= m / 2) inZone = true;
+            bool inZone = (i < n / 2 && j < m / 2) || (i >= n / 2 && j >= m / 2);
             if (inZone && matrix[i][j] > 0) {
-                result.push_back(&matrix[i][j]);
+                resultCount++;
+            }
+        }
+    }
+
+    if (resultCount == 0) return nullptr;
+
+    double** result = new double*[resultCount];
+    int k = 0;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            bool inZone = (i < n / 2 && j < m / 2) || (i >= n / 2 && j >= m / 2);
+            if (inZone && matrix[i][j] > 0) {
+                result[k] = &matrix[i][j];
+                k++;
             }
         }
     }
@@ -70,7 +98,11 @@ void taskMatrix() {
     cout << "Введите N и M: ";
     cin >> n >> m;
 
-    vector<vector<double>> matrix(n, vector<double>(m));
+    double** matrix = new double*[n];
+    for (int i = 0; i < n; i++) {
+        matrix[i] = new double[m];
+    }
+
     cout << "Введите элементы матрицы:" << endl;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
@@ -78,13 +110,20 @@ void taskMatrix() {
         }
     }
 
-    vector<double*> positives = findPositiveZones(matrix);
+    int count = 0;
+    double** positives = findPositiveZones(matrix, n, m, count);
 
     cout << "\nПоложительные элементы в заштрихованной области:" << endl;
-    for (double* p : positives) {
-        cout << *p << " ";
+    for (int i = 0; i < count; i++) {
+        cout << *positives[i] << " ";
     }
     cout << endl;
+
+    if (positives != nullptr) delete[] positives;
+    for (int i = 0; i < n; i++) {
+        delete[] matrix[i];
+    }
+    delete[] matrix;
 }
 
 int main() {
