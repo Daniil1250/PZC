@@ -1,133 +1,95 @@
 #include <iostream>
-#include <ctime>
-#include <cstdlib>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cctype>
 #include <iomanip>
 
 using namespace std;
 
-int findMinIndex(double* arr, int len) {
-    int minIndex = 0;
-    for (int i = 1; i < len; i++) {
-        if (arr[i] < arr[minIndex]) {
-            minIndex = i;
+vector<int> analyzeString(const string& text) {
+    vector<int> stats(4, 0);
+    stats[0] = text.length();
+    bool inWord = false;
+    for (char c : text) {
+        if (isupper(c)) stats[2]++;
+        else if (islower(c)) stats[3]++;
+        if (isspace(c)) {
+            inWord = false;
+        } else if (!inWord) {
+            inWord = true;
+            stats[1]++;
         }
     }
-    return minIndex;
+    return stats;
 }
 
-void checkArrayTask() {
-    const int N1 = 10;
-    const int N2 = 12;
-
-    double* A = new double[N1];
-    double* B = new double[N2];
-
-    for (int i = 0; i < N1; i++) {
-        A[i] = (rand() % 100) / 3.0;
-    }
-    for (int i = 0; i < N2; i++) {
-        B[i] = (rand() % 100) / 3.0;
+void taskStrings() {
+    cout << "--- Задача 1: Строки ---" << endl;
+    vector<string> lines;
+    string input;
+    cout << "Вводите строки (введите 'and' для завершения):" << endl;
+    while (true) {
+        getline(cin, input);
+        if (input == "and") break;
+        lines.push_back(input);
     }
 
-    cout << "Массив A: ";
-    for (int i = 0; i < N1; i++) cout << A[i] << " ";
-    cout << endl;
+    sort(lines.begin(), lines.end());
 
-    cout << "Массив B: ";
-    for (int i = 0; i < N2; i++) cout << B[i] << " ";
-    cout << endl;
-
-    int minIdxA = findMinIndex(A, N1);
-    int minIdxB = findMinIndex(B, N2);
-
-    cout << "\nИндекс минимума в A: " << minIdxA << endl;
-    cout << "Индекс минимума в B: " << minIdxB << endl;
-
-    int distToEndA = N1 - 1 - minIdxA;
-    int distToEndB = N2 - 1 - minIdxB;
-
-    if (distToEndA < distToEndB) {
-        cout << "Минимум ближе к концу в массиве A" << endl;
+    cout << "\nРезультат:" << endl;
+    for (const string& line : lines) {
+        vector<int> stats = analyzeString(line);
+        cout << line << " [Длина: " << stats[0]
+             << ", Слов: " << stats[1]
+             << ", Заглавных: " << stats[2]
+             << ", Строчных: " << stats[3] << "]" << endl;
     }
-    else if (distToEndB < distToEndA) {
-        cout << "Минимум ближе к концу в массиве B" << endl;
-    }
-    else {
-        cout << "Минимумы находятся на одинаковом расстоянии от конца" << endl;
-    }
-
-    delete[] A;
-    delete[] B;
 }
 
-void findMaxMinInMatrix(int** mat, int N, int M, int* maxTop, int* minBottom) {
-    *maxTop = -999999;
-    *minBottom = 999999;
-
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
-            if (i < N / 2 && j < M / 2) {
-                if (mat[i][j] > *maxTop) {
-                    *maxTop = mat[i][j];
-                }
-            }
-            if (i >= N / 2 && j >= M / 2) {
-                if (mat[i][j] < *minBottom) {
-                    *minBottom = mat[i][j];
-                }
+vector<double*> findPositiveZones(vector<vector<double>>& matrix) {
+    vector<double*> result;
+    int n = matrix.size();
+    int m = matrix[0].size();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            bool inZone = false;
+            if (i < n / 2 && j < m / 2) inZone = true;
+            if (i >= n / 2 && j >= m / 2) inZone = true;
+            if (inZone && matrix[i][j] > 0) {
+                result.push_back(&matrix[i][j]);
             }
         }
     }
+    return result;
 }
 
-void matrixTask() {
-    const int N = 6;
-    const int M = 8;
+void taskMatrix() {
+    cout << "\n--- Задача 2: Матрица ---" << endl;
+    int n, m;
+    cout << "Введите N и M: ";
+    cin >> n >> m;
 
-    int** mat = new int*[N];
-    for (int i = 0; i < N; i++) {
-        mat[i] = new int[M];
-    }
-
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
-            mat[i][j] = rand() % 21 - 10;
+    vector<vector<double>> matrix(n, vector<double>(m));
+    cout << "Введите элементы матрицы:" << endl;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> matrix[i][j];
         }
     }
 
-    cout << "\nМатрица " << N << "x" << M << ":" << endl;
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
-            cout << setw(4) << mat[i][j];
-        }
-        cout << endl;
+    vector<double*> positives = findPositiveZones(matrix);
+
+    cout << "\nПоложительные элементы в заштрихованной области:" << endl;
+    for (double* p : positives) {
+        cout << *p << " ";
     }
-
-    int maxTop;
-    int minBottom;
-    
-    findMaxMinInMatrix(mat, N, M, &maxTop, &minBottom);
-
-    cout << "\nМаксимум в верхней заштрихованной области: " << maxTop << endl;
-    cout << "Минимум в нижней заштрихованной области: " << minBottom << endl;
-
-    for (int i = 0; i < N; i++) {
-        delete[] mat[i];
-    }
-    delete[] mat;
+    cout << endl;
 }
 
 int main() {
-    setlocale(LC_ALL, "RU");
-    srand(time(0));
-
-    cout << "1. Задача с массивами" << endl;
-    checkArrayTask();
-
-    cout << "\n========================================" << endl;
-
-    cout << "2. Задача с матрицей" << endl;
-    matrixTask();
-
+    setlocale(LC_ALL, "Russian");
+    taskStrings();
+    taskMatrix();
     return 0;
 }
