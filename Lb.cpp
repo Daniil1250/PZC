@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <cctype>
+#include <string>
 
 using namespace std;
 
@@ -26,16 +27,28 @@ void analyzeString(const char* text, int* stats) {
 
 void taskStrings() {
     cout << "--- Задача 1 ---" << endl;
-    char** lines = new char*[100];
+    int capacity = 10;
+    char** lines = new char*[capacity];
     int count = 0;
-    char buffer[256];
 
     cout << "Вводите строки (and для конца):" << endl;
-    while (count < 100) {
-        cin.getline(buffer, 256);
-        if (strcmp(buffer, "and") == 0) break;
-        lines[count] = new char[strlen(buffer) + 1];
-        strcpy(lines[count], buffer);
+    string input;
+    while (true) {
+        getline(cin, input);
+        if (input == "and") break;
+
+        if (count == capacity) {
+            capacity = capacity * 2;
+            char** newLines = new char*[capacity];
+            for (int i = 0; i < count; i++) {
+                newLines[i] = lines[i];
+            }
+            delete[] lines;
+            lines = newLines;
+        }
+
+        lines[count] = new char[input.length() + 1];
+        strcpy(lines[count], input.c_str());
         count++;
     }
 
