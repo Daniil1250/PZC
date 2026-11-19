@@ -1,16 +1,17 @@
 # ============================================================
 # ПАРСИНГ ЗАКАЗОВ WILDBERRIES С АВТОРИЗАЦИЕЙ ЧЕРЕЗ SMS
 # ============================================================
-# Библиотеки: pip install playwright
-# Браузер:    playwright install chromium
+# Установка: pip install playwright beautifulsoup4
+# Браузер:   playwright install chromium
 # ============================================================
 
 import time
 from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
 # --- НАСТРОЙКИ ---
 PHONE = "+79001234567"          # <-- ЗАМЕНИ НА СВОЙ НОМЕР
-SESSION_FILE = "wb_session.json" # Файл, где храним сессию
+SESSION_FILE = "wb_session.json"
 ORDERS_URL = "https://www.wildberries.ru/lk/myorders/archive"
 
 def parse_orders():
@@ -27,28 +28,37 @@ def parse_orders():
         # 2. Открываем окно входа
         print("2. Открываем форму входа...")
         try:
-            # Кнопка "Войти" в шапке. Если селектор изменится — правь здесь.
             page.click("text=Войти", timeout=10000)
             time.sleep(2)
         except:
             print("Кнопка 'Войти' не найдена. Возможно, уже авторизован.")
 
-        # 3. Подставляем номер телефона
+        # 3. Подставляем номер телефона (обход маски WB)
         print("3. Вводим номер телефона...")
         try:
-            page.fill("input[type='tel']", PHONE)
+            tel_input = page.locator("input[type='tel']")
+            tel_input.wait_for(state="visible", timeout=10000)
+
+            # Кликаем по полю, чтобы поставить фокус
+            tel_input.click()
+            time.sleep(0.5)
+
+            # Печатаем номер по одной цифре (имитация человека)
+            tel_input.press_sequentially(PHONE, delay=150)
             time.sleep(1)
+
+            # Нажимаем "Получить код"
             page.click("text=Получить код")
             print("Код отправлен. Проверь телефон.")
         except Exception as e:
             print(f"Ошибка при вводе номера: {e}")
 
-        # 4. ЖДЁМ РУЧНОГО ВВОДА SMS (скрипт спит 120 секунд)
+        # 4. ЖДЁМ РУЧНОГО ВВОДА SMS
         print("\n>>> ВВЕДИ КОД ИЗ SMS В БРАУЗЕРЕ ВРУЧНУЮ <<<")
         print("Скрипт ждёт 120 секунд...")
         time.sleep(120)
 
-        # 5. Сохраняем сессию (cookies + localStorage)
+        # 5. Сохраняем сессию
         print("\n4. Сохраняем сессию...")
         context.storage_state(path=SESSION_FILE)
         print(f"Сессия сохранена в {SESSION_FILE}")
@@ -58,23 +68,20 @@ def parse_orders():
         page.goto(ORDERS_URL)
         time.sleep(3)
 
-        # 7. Парсим заказы (упрощённо — берём текст карточек)
+        # 7. Парсим заказы
         print("6. Собираем данные...")
         html = page.content()
 
-        # Сохраняем HTML, чтобы ты мог найти актуальные классы
         with open("wb_orders.html", "w", encoding="utf-8") as f:
             f.write(html)
         print("HTML сохранён в wb_orders.html — открой и посмотри классы карточек.")
 
-        # Простой пример: ищем все блоки с классом, содержащим "order"
-        # (WB часто меняет верстку, поэтому сначала сохраняем HTML)
-        from bs4 import BeautifulSoup
+        # Простой пример парсинга: ищем блоки с "order" в классе
         soup = BeautifulSoup(html, "html.parser")
         cards = soup.find_all(class_=lambda c: c and "order" in c.lower())
 
         print(f"\nНайдено блоков с 'order' в классе: {len(cards)}")
-        for i, card in enumerate(cards[:3], 1):  # покажем первые 3
+        for i, card in enumerate(cards[:3], 1):
             text = card.get_text(strip=True)[:100]
             print(f"  Заказ {i}: {text}...")
 
